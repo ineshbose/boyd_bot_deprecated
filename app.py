@@ -1,6 +1,7 @@
 from flask import Flask, request
 import os, sys
 from pymessenger import Bot
+from scraper.py import main
 
 app = Flask(__name__)
 
@@ -26,12 +27,17 @@ def webhook():
                 sender_id = messaging_event['sender']['id']
                 recipient_id = messaging_event['recipient']['id']
                 if messaging_event.get('message'):
+                    '''
                     if 'text' in messaging_event['message']:
                         messaging_text = messaging_event['message']['text']
                     else:
                         messaging_text = 'no text'
                     response = messaging_text
                     bot.send_text_message(sender_id, response)
+                    '''
+                    if messaging_event['message'] == 'hello':
+                        main()
+
     return "ok", 200
 
 def log(message):
