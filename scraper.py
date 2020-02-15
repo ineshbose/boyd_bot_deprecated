@@ -1,4 +1,5 @@
 from selenium import webdriver
+import os
 from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH
 import details
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
@@ -6,12 +7,12 @@ import time, datetime
 from getpass import getpass
 
 options = webdriver.ChromeOptions()
+options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
 options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-options.binary_location = GOOGLE_CHROME_PATH
-browser = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, chrome_options=options)
+browser = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
 
 def login(guidd,passww):
     browser.get(URL)
