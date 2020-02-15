@@ -1,26 +1,23 @@
 from selenium import webdriver
-from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH
-from details import guid,passw,uid,messagepass,loggedin
+from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH, chromedriver
+import details
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
 import time, datetime
 from getpass import getpass
-import details
 
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
 options.add_argument('--disable-gpu')
-options.add_argument('--no-sandbox')
-options.binary_location = GOOGLE_CHROME_PATH
-browser = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, chrome_options=options)
+#options.add_argument('--no-sandbox')
+#options.binary_location = GOOGLE_CHROME_PATH
+browser = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
 
-uid = 0
-
-def login(guid, passw):
+def login(guidd,passww):
     browser.get(URL)
-    browser.find_element_by_id("guid").send_keys(guid)
-    browser.find_element_by_id("password").send_keys(passw)
+    browser.find_element_by_id("guid").send_keys(guidd)
+    browser.find_element_by_id("password").send_keys(passww)
     #print("\nLogging in..\n")
-    bot.send_text_message(uid, "Logging in..")
+    #bot.send_text_message(uid, "Logging in..")
     browser.find_element_by_xpath("//*[@id='app']/div/main/button").click()
     time.sleep(4)
     try:
@@ -30,7 +27,7 @@ def login(guid, passw):
         if browser.current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             #print("\nLogin successful!\n")
             #bot.send_text_message(uid, "Login successful!")
-            loggedin = True
+            details.loggedin = True
             return "success"
             #read_today()
             #read_week()
@@ -133,5 +130,5 @@ def main(guid,passw):
     browser.quit()
 
 def close():
-    loggedin = False
+    details.loggedin = False
     browser.quit()

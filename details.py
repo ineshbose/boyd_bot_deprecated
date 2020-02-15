@@ -1,5 +1,5 @@
 guid = ""
 passw = ""
-uid = 0
+uid = ""
 messagepass = ""
 loggedin = False
