@@ -110,12 +110,12 @@ def read_week(day):
 
 def main(guid,passw):
     #print("\nHello! Give me a minute to initialize..\n")
-    bot.send_text_message(uid, "Hello! Give me a minute to initialize..")
+    #bot.send_text_message(uid, "Hello! Give me a minute to initialize..")
     login(guid,passw)
     quit="n"
     while quit.upper()!="Y":
         print("\nWhat's up?\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day")
-        bot.send_text_message(uid, "What's up?\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day")
+        #bot.send_text_message(uid, "What's up?\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day")
         choice = int(input("Input: "))
         if choice == 1:
             read_today()
@@ -132,4 +132,6 @@ def main(guid,passw):
     print("\nClosing browser..\n")
     browser.quit()
 
-main()
+def close():
+    loggedin = False
+    browser.quit()

@@ -88,6 +88,7 @@ def handleExpect(message):
         elif message == "5":
             expecting_start = 1
             expecting_input = 0
+            close()
             exit()
 
 
