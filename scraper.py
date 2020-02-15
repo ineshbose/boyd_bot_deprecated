@@ -1,5 +1,5 @@
 from selenium import webdriver
-from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH, chromedriver
+from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH
 import details
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
 import time, datetime
@@ -8,7 +8,7 @@ from getpass import getpass
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
 options.add_argument('--disable-gpu')
-#options.add_argument('--no-sandbox')
+options.add_argument('--no-sandbox')
 options.binary_location = GOOGLE_CHROME_PATH
 browser = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, chrome_options=options)
 
@@ -35,13 +35,14 @@ def login(guidd,passww):
         #browser.switch_to_alert().accept()
         #print("\nInvalid credentials! Try again.\n")
         #bot.send_text_message(uid, "Login unsuccessful. Try again.")
+        browser.refresh()
         return "Invalid Credentials. "
         #browser.refresh()
         #login()
     except NoSuchElementException as load:
         #print("\nSomething went wrong. Maybe the connection was too slow. Try again.\n")
         #bot.send_text_message(uid, "Something went wrong. Maybe the connection was too slow. Try again.")
-        #browser.refresh()
+        browser.refresh()
         #login()
         return "Something went wrong. Maybe the connection was too slow. "
 
@@ -57,7 +58,7 @@ def read_today():
     else:
         #print("\nYou have..")
         #bot.send_text_message(uid, "You have..")
-        message+= "You have..\n"
+        message+= "You have..\n\n"
         for clas in classes:
             try:
                 clas.click()
@@ -65,7 +66,7 @@ def read_today():
                 table = browser.find_element_by_class_name("dialogueTable")
                 #print(table.text, "\n")
                 #bot.send_text_message(uid, table.text)
-                message+=table.text+"\n"
+                message+=table.text+"\n\n"
                 browser.find_element_by_class_name("close.text-white").click()
             except ElementNotInteractableException as e:
                 #print("(Unable to fetch class)\n")
@@ -81,7 +82,8 @@ def specific_day(date_entry):
     #date_entry = input('Enter a date in DD-MM-YYYY format: ')
     day, month, year = map(int, date_entry.split('/'))
     date1 = datetime.date(year, month, day)
-    loop_days((date1 - datetime.date.today()).days)
+    message = loop_days((date1 - datetime.date.today()).days)
+    return message
 
 def loop_days(n):
     for i in range(n):
@@ -130,5 +132,6 @@ def main(guid,passw):
     browser.quit()
 
 def close():
+    browser.find_element_by_class_name("btn.btn-primary.btn-block.nav-button.router-link-active").click()
+    browser.find_element_by_class_name("btn.btn-primary.btn-rounded").click()
     details.loggedin = False
-    browser.quit()

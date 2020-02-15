@@ -69,7 +69,7 @@ def handleExpect(message):
     if message == "no text":
         return "Hello there! Say START to wake me!"
     elif expect.expecting_start == 1 and message.upper() == "START":
-        bot.send_text_message(details.uid, "Hello there!!")
+        bot.send_text_message(details.uid, "Hello there!")
         expect.expecting_guid = 1
         expect.expecting_start = 0
         return "Enter GUID."
@@ -89,7 +89,7 @@ def handleExpect(message):
         result = scraper.login(details.guid, details.passw)
         if result == "success":
             expect.expecting_input = 1
-            return "Logged in!\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day"
+            return "Logged in!\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day\n5 - Logout & Quit"
         else:
             expect.expecting_guid = 1
             return result+"Enter GUID again."
@@ -100,7 +100,7 @@ def handleExpect(message):
         expect.expecting_day = 0
         return scraper.loop_days(int(message))
     elif expect.expecting_input == 1 and expect.expecting_date == 1:
-        expect.expecting_date = 1
+        expect.expecting_date = 0
         return scraper.specific_day(message)
     elif expect.expecting_input == 1:
         if message == "1":
@@ -118,7 +118,7 @@ def handleExpect(message):
             expect.expecting_start = 1
             expect.expecting_input = 0
             scraper.close()
-            exit()
+            return "Logged out! Goodbye. Say START to wake me. :)"
 
 
 
