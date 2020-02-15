@@ -1,5 +1,6 @@
 from selenium import webdriver
-from constants import URL, chromedriver, weekdayMapping
+from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH
+from details import guid,passw,uid,messagepass,loggedin
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
 import time, datetime
 from getpass import getpass
@@ -28,60 +29,71 @@ def login(guid, passw):
         time.sleep(1)
         if browser.current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             #print("\nLogin successful!\n")
-            bot.send_text_message(uid, "Login successful!")
+            #bot.send_text_message(uid, "Login successful!")
+            loggedin = True
+            return "success"
             #read_today()
             #read_week()
     except UnexpectedAlertPresentException as e:
         #browser.switch_to_alert().accept()
         #print("\nInvalid credentials! Try again.\n")
-        bot.send_text_message(uid, "Login unsuccessful. Try again.")
-        browser.refresh()
-        login()
+        #bot.send_text_message(uid, "Login unsuccessful. Try again.")
+        return "Invalid Credentials. "
+        #browser.refresh()
+        #login()
     except NoSuchElementException as load:
         #print("\nSomething went wrong. Maybe the connection was too slow. Try again.\n")
-        bot.send_text_message(uid, "Something went wrong. Maybe the connection was too slow. Try again.")
-        browser.refresh()
-        login()
+        #bot.send_text_message(uid, "Something went wrong. Maybe the connection was too slow. Try again.")
+        #browser.refresh()
+        #login()
+        return "Something went wrong. Maybe the connection was too slow. "
 
 def read_today():
+    message = ""
     time.sleep(1)
     #classes = browser.find_elements_by_class_name("fc-title")
     classes = browser.find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
     if classes == []:
         #print("Either there are no classes, or something went wrong.")
-        bot.send_text_message(uid, "There seem to be no classes.")
+        #bot.send_text_message(uid, "There seem to be no classes.")
+        message+= "There seem to be no classes."
     else:
         #print("\nYou have..")
-        bot.send_text_message(uid, "You have..")
+        #bot.send_text_message(uid, "You have..")
+        message+= "You have..\n"
         for clas in classes:
             try:
                 clas.click()
                 time.sleep(1)
                 table = browser.find_element_by_class_name("dialogueTable")
                 #print(table.text, "\n")
-                bot.send_text_message(uid, table.text)
+                #bot.send_text_message(uid, table.text)
+                message+=table.text+"\n"
                 browser.find_element_by_class_name("close.text-white").click()
             except ElementNotInteractableException as e:
                 #print("(Unable to fetch class)\n")
-                bot.send_text_message(uid, "(Unable to fetch class)")
+                #bot.send_text_message(uid, "(Unable to fetch class)")
+                message+="(Unable to fetch class)\n"
                 continue
+    return message
     #for clas in classes:
         #print(clas.text)
         #print(" ")
 
-def specific_day():
-    date_entry = input('Enter a date in DD-MM-YYYY format: ')
-    day, month, year = map(int, date_entry.split('-'))
+def specific_day(date_entry):
+    #date_entry = input('Enter a date in DD-MM-YYYY format: ')
+    day, month, year = map(int, date_entry.split('/'))
     date1 = datetime.date(year, month, day)
     loop_days((date1 - datetime.date.today()).days)
 
 def loop_days(n):
     for i in range(n):
         browser.find_element_by_class_name("fc-next-button.fc-button.fc-button-primary").click()
-    read_today()
+    message = read_today()
     browser.find_element_by_class_name("fc-today-button.fc-button.fc-button-primary").click()
+    return message
 
-def read_week():
+def read_week(day):
     time.sleep(1)
     browser.find_element_by_class_name("fc-listWeek-button.fc-button.fc-button-primary").click()
     time.sleep(1)
@@ -93,8 +105,8 @@ def read_week():
     days.append(data.split("Wednesday")[1].split("Thursday")[0])
     days.append(data.split("Thursday")[1].split("Friday")[0])
     days.append(data.split("Friday")[1])
-    print(days[weekdayMapping[input("\nWhat day this week? ").upper()]])
     browser.find_element_by_class_name("fc-timeGridDay-button.fc-button.fc-button-primary").click()
+    return (days[weekdayMapping[day.upper()]])
 
 def main(guid,passw):
     #print("\nHello! Give me a minute to initialize..\n")
