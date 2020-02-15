@@ -1,6 +1,6 @@
 from flask import Flask, request
 import os, sys
-import scraper, expect, details
+#import scraper, expect, details
 #import redis
 from pymessenger import Bot
 #from scraper import main
