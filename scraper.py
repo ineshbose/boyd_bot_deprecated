@@ -3,12 +3,14 @@ from constants import URL, chromedriver, weekdayMapping
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
 import time, datetime
 from getpass import getpass
-from details import uid,guid,passw,message,loggedin
+import details
 
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
 options.add_argument('--disable-gpu')
-browser = webdriver.Chrome(chromedriver, chrome_options=options)
+options.add_argument('--no-sandbox')
+options.binary_location = GOOGLE_CHROME_PATH
+browser = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, chrome_options=options)
 
 uid = 0
 
@@ -94,11 +96,10 @@ def read_week():
     print(days[weekdayMapping[input("\nWhat day this week? ").upper()]])
     browser.find_element_by_class_name("fc-timeGridDay-button.fc-button.fc-button-primary").click()
 
-def main(senderid):
-    uid = senderid
+def main(guid,passw):
     #print("\nHello! Give me a minute to initialize..\n")
     bot.send_text_message(uid, "Hello! Give me a minute to initialize..")
-    login()
+    login(guid,passw)
     quit="n"
     while quit.upper()!="Y":
         print("\nWhat's up?\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day")

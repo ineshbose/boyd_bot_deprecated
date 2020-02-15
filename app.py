@@ -1,5 +1,6 @@
 from flask import Flask, request
 import os, sys
+import scraper, expect, details
 #import redis
 from pymessenger import Bot
 #from scraper import main
@@ -30,13 +31,17 @@ def webhook():
                 recipient_id = messaging_event['recipient']['id']
                 if messaging_event.get('message'):
                     if 'text' in messaging_event['message']:
-                        messaging_text = "reply"+messaging_event['message']['text']
+                        messaging_text = "reply : "+messaging_event['message']['text']
                     else:
                         messaging_text = 'no text'
                     response = messaging_text
                     bot.send_text_message(sender_id, response)
 
     return "ok", 200
+
+def handleExpectation(message):
+    if message == "start":
+        expecting_start = 1
 
 def log(message):
     print(message)
