@@ -3,17 +3,21 @@ from constants import URL, chromedriver, weekdayMapping
 from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
 import time, datetime
 from getpass import getpass
+from details import uid,guid,passw,message,loggedin
 
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 browser = webdriver.Chrome(chromedriver, chrome_options=options)
 
-def login():
+uid = 0
+
+def login(guid, passw):
     browser.get(URL)
-    browser.find_element_by_id("guid").send_keys(input("GUID: "))
-    browser.find_element_by_id("password").send_keys(getpass())
-    print("\nLogging in..\n")
+    browser.find_element_by_id("guid").send_keys(guid)
+    browser.find_element_by_id("password").send_keys(passw)
+    #print("\nLogging in..\n")
+    bot.send_text_message(uid, "Logging in..")
     browser.find_element_by_xpath("//*[@id='app']/div/main/button").click()
     time.sleep(4)
     try:
@@ -21,16 +25,19 @@ def login():
         browser.find_element_by_xpath("//*[@id='app']/div/div[1]/div[1]/a").click()
         time.sleep(1)
         if browser.current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
-            print("\nLogin successful!\n")
+            #print("\nLogin successful!\n")
+            bot.send_text_message(uid, "Login successful!")
             #read_today()
             #read_week()
     except UnexpectedAlertPresentException as e:
         #browser.switch_to_alert().accept()
-        print("\nInvalid credentials! Try again.\n")
+        #print("\nInvalid credentials! Try again.\n")
+        bot.send_text_message(uid, "Login unsuccessful. Try again.")
         browser.refresh()
         login()
     except NoSuchElementException as load:
-        print("\nSomething went wrong. Maybe the connection was too slow. Try again.\n")
+        #print("\nSomething went wrong. Maybe the connection was too slow. Try again.\n")
+        bot.send_text_message(uid, "Something went wrong. Maybe the connection was too slow. Try again.")
         browser.refresh()
         login()
 
@@ -39,18 +46,22 @@ def read_today():
     #classes = browser.find_elements_by_class_name("fc-title")
     classes = browser.find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
     if classes == []:
-        print("Either there are no classes, or something went wrong.")
+        #print("Either there are no classes, or something went wrong.")
+        bot.send_text_message(uid, "There seem to be no classes.")
     else:
-        print("\nYou have..")
+        #print("\nYou have..")
+        bot.send_text_message(uid, "You have..")
         for clas in classes:
             try:
                 clas.click()
                 time.sleep(1)
                 table = browser.find_element_by_class_name("dialogueTable")
-                print(table.text, "\n")
+                #print(table.text, "\n")
+                bot.send_text_message(uid, table.text)
                 browser.find_element_by_class_name("close.text-white").click()
             except ElementNotInteractableException as e:
-                print("(Unable to fetch class)\n")
+                #print("(Unable to fetch class)\n")
+                bot.send_text_message(uid, "(Unable to fetch class)")
                 continue
     #for clas in classes:
         #print(clas.text)
@@ -83,12 +94,15 @@ def read_week():
     print(days[weekdayMapping[input("\nWhat day this week? ").upper()]])
     browser.find_element_by_class_name("fc-timeGridDay-button.fc-button.fc-button-primary").click()
 
-def main():
-    print("\nHello! Give me a minute to initialize..\n")
+def main(senderid):
+    uid = senderid
+    #print("\nHello! Give me a minute to initialize..\n")
+    bot.send_text_message(uid, "Hello! Give me a minute to initialize..")
     login()
     quit="n"
     while quit.upper()!="Y":
         print("\nWhat's up?\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day")
+        bot.send_text_message(uid, "What's up?\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day")
         choice = int(input("Input: "))
         if choice == 1:
             read_today()

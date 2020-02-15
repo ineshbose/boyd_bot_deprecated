@@ -1,5 +1,11 @@
 from wit import Wit
 
-access_token = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624McoEHRFBnzXugVlkcCx0PhOLUpAkdn4gZBKYGrRpRrT4OM0yEU5dYI0aVM1RosAThjqFIejvhx4m1L8REV29aMrmspjUeVDwTLVyLBabJKcZCaZC3kooRZCx8ZAbz1BiSZBrCgIOZC7ZBLBcfUZD"
+access_token = "UYW4Y4L4A5XQB3DSWJHAQZSH5HBFGYZ7"
 
 client = Wit(access_token = access_token)
+
+def wit_response(message_text):
+    resp = client.message(message_text)
+    
+
+print(resp)
