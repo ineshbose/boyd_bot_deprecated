@@ -11,13 +11,6 @@ PAGE_ACCESS_TOKEN = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624Mco
 
 bot = Bot(PAGE_ACCESS_TOKEN)
 
-def main(uid):
-    bot.send_text_message(uid, "First number: ")
-    a1 = int(webhook())
-    bot.send_text_message(uid, "Second number: ")
-    a2 = int(webhook())
-    bot.send_text_message(uid, a1+a2)
-
 @app.route('/', methods=['GET'])
 def verify():
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
@@ -36,17 +29,13 @@ def webhook():
                 sender_id = messaging_event['sender']['id']
                 recipient_id = messaging_event['recipient']['id']
                 if messaging_event.get('message'):
-                    '''
                     if 'text' in messaging_event['message']:
                         messaging_text = "reply"+messaging_event['message']['text']
                     else:
                         messaging_text = 'no text'
-                    '''
-                    #response = messaging_text
-                    #bot.send_text_message(sender_id, response)
-                    if messaging_event['message'] == 'start':
-                        main(sender_id)
-                    return messaging_event['message']
+                    response = messaging_text
+                    bot.send_text_message(sender_id, response)
+
     return "ok", 200
 
 def log(message):
