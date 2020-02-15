@@ -31,7 +31,7 @@ def webhook():
                 recipient_id = messaging_event['recipient']['id']
                 if messaging_event.get('message'):
                     if 'text' in messaging_event['message']:
-                        messaging_text = "reply : "+messaging_event['message']['text']
+                        messaging_text = "reply : "+messaging_event['message']['text']+"!!!!!!!!"
                     else:
                         messaging_text = 'no text'
                     response = messaging_text
