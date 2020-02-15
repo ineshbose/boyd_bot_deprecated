@@ -39,10 +39,6 @@ def webhook():
 
     return "ok", 200
 
-def handleExpectation(message):
-    if message == "start":
-        expecting_start = 1
-
 def log(message):
     print(message)
     sys.stdout.flush()
