@@ -1,8 +1,9 @@
 from selenium import webdriver
 import os
-from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH
-import details
-from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
+#from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH
+import details, constants
+#from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
+import selenium.common.exceptions as error
 import time, datetime
 from getpass import getpass
 
@@ -13,9 +14,10 @@ options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 browser = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+#browser = webdriver.Chrome(executable_path=constants.chromedriver, chrome_options=options)
 
 def login(guidd,passww):
-    browser.get(URL)
+    browser.get(constants.URL)
     browser.find_element_by_id("guid").send_keys(guidd)
     browser.find_element_by_id("password").send_keys(passww)
     #print("\nLogging in..\n")
@@ -23,7 +25,6 @@ def login(guidd,passww):
     browser.find_element_by_xpath("//*[@id='app']/div/main/button").click()
     time.sleep(4)
     try:
-        #browser.current_url == "https://www.gla.ac.uk/apps/timetable/#/"
         browser.find_element_by_xpath("//*[@id='app']/div/div[1]/div[1]/a").click()
         time.sleep(1)
         if browser.current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
@@ -31,27 +32,20 @@ def login(guidd,passww):
             #bot.send_text_message(uid, "Login successful!")
             details.loggedin = True
             return "success"
-            #read_today()
-            #read_week()
-    except UnexpectedAlertPresentException as e:
-        #browser.switch_to_alert().accept()
+    except error.UnexpectedAlertPresentException as e:
         #print("\nInvalid credentials! Try again.\n")
         #bot.send_text_message(uid, "Login unsuccessful. Try again.")
         browser.refresh()
         return "Invalid Credentials. "
-        #browser.refresh()
-        #login()
-    except NoSuchElementException as load:
+    except error.NoSuchElementException as load:
         #print("\nSomething went wrong. Maybe the connection was too slow. Try again.\n")
         #bot.send_text_message(uid, "Something went wrong. Maybe the connection was too slow. Try again.")
         browser.refresh()
-        #login()
         return "Something went wrong. Maybe the connection was too slow. "
 
 def read_today():
     message = ""
     time.sleep(1)
-    #classes = browser.find_elements_by_class_name("fc-title")
     classes = browser.find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
     if classes == []:
         #print("Either there are no classes, or something went wrong.")
@@ -70,15 +64,12 @@ def read_today():
                 #bot.send_text_message(uid, table.text)
                 message+=table.text+"\n\n"
                 browser.find_element_by_class_name("close.text-white").click()
-            except ElementNotInteractableException as e:
+            except error.ElementNotInteractableException as e:
                 #print("(Unable to fetch class)\n")
                 #bot.send_text_message(uid, "(Unable to fetch class)")
                 message+="(Unable to fetch class)\n"
                 continue
     return message
-    #for clas in classes:
-        #print(clas.text)
-        #print(" ")
 
 def specific_day(date_entry):
     #date_entry = input('Enter a date in DD-MM-YYYY format: ')
@@ -107,8 +98,9 @@ def read_week(day):
     days.append(data.split("Thursday")[1].split("Friday")[0])
     days.append(data.split("Friday")[1])
     browser.find_element_by_class_name("fc-timeGridDay-button.fc-button.fc-button-primary").click()
-    return (days[weekdayMapping[day.upper()]])
+    return (days[constants.weekdayMapping[day.upper()]])
 
+'''
 def main(guid,passw):
     #print("\nHello! Give me a minute to initialize..\n")
     #bot.send_text_message(uid, "Hello! Give me a minute to initialize..")
@@ -132,6 +124,7 @@ def main(guid,passw):
 
     print("\nClosing browser..\n")
     browser.quit()
+'''
 
 def close():
     browser.find_element_by_class_name("btn.btn-primary.btn-block.nav-button.router-link-active").click()
