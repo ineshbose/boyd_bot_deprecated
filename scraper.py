@@ -4,7 +4,6 @@ import os
 import constants
 #from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
 import selenium.common.exceptions as error
-from selenium.webdriver.common.keys import Keys
 import time, datetime
 from getpass import getpass
 
@@ -19,8 +18,6 @@ options.add_argument('--disable-dev-shm-usage')
 browsers = {}
 
 def login(guidd,passww):
-    #body = browser.find_element_by_tag_name("body")
-    #body.send_keys(Keys.CONTROL+'t')
     browsers[guidd] = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     browsers[guidd].get(constants.URL)
     browsers[guidd].find_element_by_id("guid").send_keys(guidd)
