@@ -8,14 +8,14 @@ from pymessenger import Bot
 from cryptography.fernet import Fernet
 
 app = Flask(__name__)
-path = os.path.dirname(os.path.realpath(__file__))
+#path = os.path.dirname(os.path.realpath(__file__))
 #PAGE_ACCESS_TOKEN = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624McoEHRFBnzXugVlkcCx0PhOLUpAkdn4gZBKYGrRpRrT4OM0yEU5dYI0aVM1RosAThjqFIejvhx4m1L8REV29aMrmspjUeVDwTLVyLBabJKcZCaZC3kooRZCx8ZAbz1BiSZBrCgIOZC7ZBLBcfUZD"
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
 cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
 db = cluster['test']
 collection = db['test']
 
-file = open(path+'/key.key', 'rb')
+file = open('key.key', 'rb')
 key = file.read()
 file.close()
 f = Fernet(key)
@@ -25,8 +25,8 @@ bot = Bot(PAGE_ACCESS_TOKEN)
 @app.route('/', methods=['GET'])
 def verify():
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-        if not request.args.get("hub.verify_token") == "hello":
-        #if not request.args.get("hub.verify_token") == os.environ.get("VERIFY_TOKEN"):
+        #if not request.args.get("hub.verify_token") == "hello":
+        if not request.args.get("hub.verify_token") == os.environ.get("VERIFY_TOKEN"):
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
     return "Hello World", 200
