@@ -10,7 +10,7 @@ from getpass import getpass
 
 options = webdriver.ChromeOptions()
 options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-#options.add_argument('--headless')
+options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
@@ -21,7 +21,7 @@ browsers = {}
 def login(guidd,passww):
     #body = browser.find_element_by_tag_name("body")
     #body.send_keys(Keys.CONTROL+'t')
-    browsers[guidd] = webdriver.Chrome(executable_path=constants.chromedriver, chrome_options=options)
+    browsers[guidd] = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
     browsers[guidd].get(constants.URL)
     browsers[guidd].find_element_by_id("guid").send_keys(guidd)
     browsers[guidd].find_element_by_id("password").send_keys(passww)
