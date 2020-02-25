@@ -1,52 +1,62 @@
 from selenium import webdriver
 import os
 #from constants import URL, weekdayMapping, GOOGLE_CHROME_PATH, CHROMEDRIVER_PATH
-import details, constants
+import constants
 #from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException, ElementNotInteractableException
 import selenium.common.exceptions as error
+from selenium.webdriver.common.keys import Keys
 import time, datetime
 from getpass import getpass
 
 options = webdriver.ChromeOptions()
 options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-options.add_argument('--headless')
+#options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-browser = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+#browser = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
 #browser = webdriver.Chrome(executable_path=constants.chromedriver, chrome_options=options)
+browsers = {}
 
 def login(guidd,passww):
-    browser.get(constants.URL)
-    browser.find_element_by_id("guid").send_keys(guidd)
-    browser.find_element_by_id("password").send_keys(passww)
+    #body = browser.find_element_by_tag_name("body")
+    #body.send_keys(Keys.CONTROL+'t')
+    browsers[guidd] = webdriver.Chrome(executable_path=constants.chromedriver, chrome_options=options)
+    browsers[guidd].get(constants.URL)
+    browsers[guidd].find_element_by_id("guid").send_keys(guidd)
+    browsers[guidd].find_element_by_id("password").send_keys(passww)
     #print("\nLogging in..\n")
     #bot.send_text_message(uid, "Logging in..")
-    browser.find_element_by_xpath("//*[@id='app']/div/main/button").click()
+    browsers[guidd].find_element_by_xpath("//*[@id='app']/div/main/button").click()
     time.sleep(4)
     try:
-        browser.find_element_by_xpath("//*[@id='app']/div/div[1]/div[1]/a").click()
+        browsers[guidd].find_element_by_xpath("//*[@id='app']/div/div[1]/div[1]/a").click()
         time.sleep(1)
-        if browser.current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
+        if browsers[guidd].current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             #print("\nLogin successful!\n")
             #bot.send_text_message(uid, "Login successful!")
-            details.loggedin = True
-            return "success"
+            #details.loggedin = True
+            #return "success"
+            return 1
     except error.UnexpectedAlertPresentException as e:
         #print("\nInvalid credentials! Try again.\n")
         #bot.send_text_message(uid, "Login unsuccessful. Try again.")
-        browser.refresh()
-        return "Invalid Credentials. "
+        #browsers[guidd].refresh()
+        browsers[guidd].quit()
+        #return "Invalid Credentials. "
+        return 2
     except error.NoSuchElementException as load:
         #print("\nSomething went wrong. Maybe the connection was too slow. Try again.\n")
         #bot.send_text_message(uid, "Something went wrong. Maybe the connection was too slow. Try again.")
-        browser.refresh()
-        return "Something went wrong. Maybe the connection was too slow. "
+        #browsers[guidd].refresh()
+        browsers[guidd].quit()
+        #return "Something went wrong. Maybe the connection was too slow. "
+        return 3
 
-def read_today():
+def read_today(guidd):
     message = ""
     time.sleep(1)
-    classes = browser.find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
+    classes = browsers[guidd].find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
     if classes == []:
         #print("Either there are no classes, or something went wrong.")
         #bot.send_text_message(uid, "There seem to be no classes.")
@@ -59,11 +69,11 @@ def read_today():
             try:
                 clas.click()
                 time.sleep(1)
-                table = browser.find_element_by_class_name("dialogueTable")
+                table = browsers[guidd].find_element_by_class_name("dialogueTable")
                 #print(table.text, "\n")
                 #bot.send_text_message(uid, table.text)
                 message+=table.text+"\n\n"
-                browser.find_element_by_class_name("close.text-white").click()
+                browsers[guidd].find_element_by_class_name("close.text-white").click()
             except error.ElementNotInteractableException as e:
                 #print("(Unable to fetch class)\n")
                 #bot.send_text_message(uid, "(Unable to fetch class)")
@@ -71,25 +81,25 @@ def read_today():
                 continue
     return message
 
-def specific_day(date_entry):
+def specific_day(date_entry, guidd):
     #date_entry = input('Enter a date in DD-MM-YYYY format: ')
     day, month, year = map(int, date_entry.split('/'))
     date1 = datetime.date(year, month, day)
-    message = loop_days((date1 - datetime.date.today()).days)
+    message = loop_days((date1 - datetime.date.today()).days, guidd)
     return message
 
-def loop_days(n):
+def loop_days(n,guidd):
     for i in range(n):
-        browser.find_element_by_class_name("fc-next-button.fc-button.fc-button-primary").click()
+        browsers[guidd].find_element_by_class_name("fc-next-button.fc-button.fc-button-primary").click()
     message = read_today()
-    browser.find_element_by_class_name("fc-today-button.fc-button.fc-button-primary").click()
+    browsers[guidd].find_element_by_class_name("fc-today-button.fc-button.fc-button-primary").click()
     return message
 
-def read_week(day):
+def read_week(day,guidd):
     time.sleep(1)
-    browser.find_element_by_class_name("fc-listWeek-button.fc-button.fc-button-primary").click()
+    browsers[guidd].find_element_by_class_name("fc-listWeek-button.fc-button.fc-button-primary").click()
     time.sleep(1)
-    week = browser.find_element_by_class_name("fc-list-table")
+    week = browsers[guidd].find_element_by_class_name("fc-list-table")
     data = week.text
     days = []
     days.append(data.split("Tuesday")[0])
@@ -97,7 +107,7 @@ def read_week(day):
     days.append(data.split("Wednesday")[1].split("Thursday")[0])
     days.append(data.split("Thursday")[1].split("Friday")[0])
     days.append(data.split("Friday")[1])
-    browser.find_element_by_class_name("fc-timeGridDay-button.fc-button.fc-button-primary").click()
+    browsers[guidd].find_element_by_class_name("fc-timeGridDay-button.fc-button.fc-button-primary").click()
     return (days[constants.weekdayMapping[day.upper()]])
 
 '''
@@ -126,7 +136,8 @@ def main(guid,passw):
     browser.quit()
 '''
 
-def close():
-    browser.find_element_by_class_name("btn.btn-primary.btn-block.nav-button.router-link-active").click()
-    browser.find_element_by_class_name("btn.btn-primary.btn-rounded").click()
-    details.loggedin = False
+def close(guidd):
+    browsers[guidd].find_element_by_class_name("btn.btn-primary.btn-block.nav-button.router-link-active").click()
+    browsers[guidd].find_element_by_class_name("btn.btn-primary.btn-rounded").click()
+    browsers[guidd].quit()
+    #details.loggedin = False
