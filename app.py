@@ -1,14 +1,11 @@
 from flask import Flask, request, session, redirect
-#from flask_pymongo import PyMongo
 from pymongo import MongoClient
 import os, sys
 import scraper
-#import details, expect
 from pymessenger import Bot
 from cryptography.fernet import Fernet
 
 app = Flask(__name__)
-#path = os.path.dirname(os.path.realpath(__file__))
 #PAGE_ACCESS_TOKEN = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624McoEHRFBnzXugVlkcCx0PhOLUpAkdn4gZBKYGrRpRrT4OM0yEU5dYI0aVM1RosAThjqFIejvhx4m1L8REV29aMrmspjUeVDwTLVyLBabJKcZCaZC3kooRZCx8ZAbz1BiSZBrCgIOZC7ZBLBcfUZD"
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
 cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
@@ -38,9 +35,7 @@ def webhook():
     if data['object'] == 'page':
         for entry in data['entry']:
             for messaging_event in entry['messaging']:
-                #details.uid = messaging_event['sender']['id']
                 sender_id = messaging_event['sender']['id']
-                #if collection.find({"id": sender_id}).count()==0 and collection.find({"id": "W"+sender_id}).count()==0:  # Work here!
                 if collection.find({"id": sender_id}).count()==0 and collection.find({"id": "W"+sender_id}).count()==0:
                     bot.send_text_message(sender_id, "New user! Enter your GUID.")
                     collection.insert({"id": "W"+sender_id, "guid": "", "thing": "", "expect":{"expecting_start": 0, "expecting_guid": 1, "expecting_pass": 0, "expecting_input": 0, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}})
@@ -83,27 +78,17 @@ def webhook():
                             return "ok", 200
                 if messaging_event.get('message'):
                     if 'text' in messaging_event['message']:
-                        #print(data['entry']['messaging']['message']['text'])
-                        #messaging_text = "reply : "+messaging_event['message']['text']+"!!!!!!!"
-                        #bot.send_text_message(details.uid, handleExpect(messaging_event['message']['text']))
                         messaging_text = messaging_event['message']['text']
                     else:
-                        #bot.send_text_message(details.uid, "no text")
                         messaging_text = 'no text'
                     response = handleExpect(messaging_text, sender_id)
-                    ### Work needed here.
-                    '''
-                    if sender_id == details.uid:
-                        bot.send_text_message(details.uid, handleExpect(response))
-                    else:
-                        bot.send_text_message(sender_id, response)
-                    '''
                     bot.send_text_message(sender_id, response)
     return "ok", 200
 
 def handleExpect(message, id):
     r = collection.find_one({"id": id})
     if r['expect']['expecting_start'] == 1:
+        bot.send_text_message(id, "Logging in..")
         collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
         scraper.login(r['guid'], (f.decrypt(r['thing'])).decode())
         return "Logged in!\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day\n5 - Logout & Quit"
