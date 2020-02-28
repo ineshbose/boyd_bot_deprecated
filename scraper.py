@@ -59,7 +59,7 @@ def read_today(guidd):
 
 def specific_day(date_entry, guidd):
     try:
-        day, month, year = map(int, date_entry.split('/'))
+        year, month, day = map(int, date_entry.split('-'))
         date1 = datetime.date(year, month, day)
         message = loop_days((date1 - datetime.date.today()).days, guidd)
         return message

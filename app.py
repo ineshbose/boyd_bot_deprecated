@@ -4,8 +4,10 @@ import os, sys
 import scraper
 from pymessenger import Bot
 from cryptography.fernet import Fernet
+from wit import Wit
 
 app = Flask(__name__)
+witClient = Wit("7RDXFP6UYEUHHZVJCB6HYMRFFQ6M55EK")
 #PAGE_ACCESS_TOKEN = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624McoEHRFBnzXugVlkcCx0PhOLUpAkdn4gZBKYGrRpRrT4OM0yEU5dYI0aVM1RosAThjqFIejvhx4m1L8REV29aMrmspjUeVDwTLVyLBabJKcZCaZC3kooRZCx8ZAbz1BiSZBrCgIOZC7ZBLBcfUZD"
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
 cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
@@ -31,7 +33,7 @@ def verify():
 @app.route('/', methods=['POST'])
 def webhook():
     data = request.get_json()
-    #log(data)
+    log(data)
     if data['object'] == 'page':
         for entry in data['entry']:
             for messaging_event in entry['messaging']:
@@ -85,6 +87,7 @@ def webhook():
                     bot.send_text_message(sender_id, response)
     return "ok", 200
 
+'''
 def handleExpect(message, id):
     r = collection.find_one({"id": id})
     if r['expect']['expecting_start'] == 1:
@@ -117,6 +120,34 @@ def handleExpect(message, id):
             collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 1, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 0, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
             scraper.close(r['guid'])
             return "Logged out! Goodbye. :)"
+        elif message.lower() == "delete data":
+            collection.delete_one({"id": id})
+            return "Deleted! :) "
+        else:
+            return "Not sure how to answer that."
+'''
+
+def handleExpect(message, id):
+    r = collection.find_one({"id": id})
+    if r['expect']['expecting_start'] == 1:
+        bot.send_text_message(id, "Logging in..")
+        collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
+        scraper.login(r['guid'], (f.decrypt(r['thing'])).decode())
+        return "Logged in!"
+    elif r['expect']['expecting_input'] == 1:
+        if message.lower() == "logout":
+            collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 1, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 0, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
+            scraper.close(r['guid'])
+            return "Logged out! Goodbye. :)"
+        elif message.lower() == "delete data":
+            collection.delete_one({"id": id})
+            return "Deleted! :) "
+        else:
+            try:
+                parse = witClient.message(message)
+                return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
+            except:
+                return "Not sure how to answer that."
 
 def log(message):
     print(message)

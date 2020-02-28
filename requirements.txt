@@ -22,6 +22,7 @@ lazy-object-proxy==1.4.3
 MarkupSafe==1.1.1
 mccabe==0.6.1
 mechanize==0.4.5
+prompt-toolkit==3.0.3
 pycparser==2.19
 PyJWT==1.7.1
 pylint==2.4.4
@@ -37,6 +38,8 @@ soupsieve==1.9.5
 twilio==6.35.4
 urllib3==1.25.8
 virtualenv==20.0.4
+wcwidth==0.1.8
 webencodings==0.5.1
 Werkzeug==1.0.0
+wit==5.1.0
 wrapt==1.11.2
