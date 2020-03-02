@@ -7,12 +7,12 @@ from cryptography.fernet import Fernet
 from wit import Wit
 
 app = Flask(__name__)
-witClient = Wit("7RDXFP6UYEUHHZVJCB6HYMRFFQ6M55EK")
-#witClient = Wit(os.environ.get("WIT_ACCESS_TOKEN"))
+#witClient = Wit("7RDXFP6UYEUHHZVJCB6HYMRFFQ6M55EK")
+#cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
 #PAGE_ACCESS_TOKEN = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624McoEHRFBnzXugVlkcCx0PhOLUpAkdn4gZBKYGrRpRrT4OM0yEU5dYI0aVM1RosAThjqFIejvhx4m1L8REV29aMrmspjUeVDwTLVyLBabJKcZCaZC3kooRZCx8ZAbz1BiSZBrCgIOZC7ZBLBcfUZD"
+witClient = Wit(os.environ.get("WIT_ACCESS_TOKEN"))
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
-cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
-#cluster = MongoClient(os.environ.get("MONGO_TOKEN"))
+cluster = MongoClient(os.environ.get("MONGO_TOKEN"))
 db = cluster['gutb']
 collection = db['users']
 
@@ -26,8 +26,8 @@ bot = Bot(PAGE_ACCESS_TOKEN)
 @app.route('/', methods=['GET'])
 def verify():
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-        #if not request.args.get("hub.verify_token") == "hello":
-        if not request.args.get("hub.verify_token") == os.environ.get("VERIFY_TOKEN"):
+        if not request.args.get("hub.verify_token") == "gutbot":
+        #if not request.args.get("hub.verify_token") == os.environ.get("VERIFY_TOKEN"):
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
     return "Hello World", 200
@@ -60,7 +60,7 @@ def webhook():
                             return "ok", 200
                     elif result['expect']['expecting_pass'] == 1:
                         bot.send_text_message(sender_id, "Attempting to log you in..")
-                        bot.send_action(id, "typing_on")
+                        bot.send_action(sender_id, "typing_on")
                         loginResult = scraper.login(result['guid'], messaging_event['message']['text'])
                         if loginResult == 1:
                             bot.send_text_message(sender_id, "Logged in!")
@@ -87,46 +87,6 @@ def webhook():
                     response = handleExpect(messaging_text, sender_id)
                     bot.send_text_message(sender_id, response)
     return "ok", 200
-
-'''
-def handleExpect(message, id):
-    r = collection.find_one({"id": id})
-    if r['expect']['expecting_start'] == 1:
-        bot.send_text_message(id, "Logging in..")
-        collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
-        scraper.login(r['guid'], (f.decrypt(r['thing'])).decode())
-        return "Logged in!\n1 - Today\n2 - This Week\n3 - X days later\n4 - On Specific Day\n5 - Logout & Quit"
-    elif r['expect']['expecting_input'] == 1 and r['expect']['expecting_day'] == 1:
-        collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
-        return scraper.read_week(message, r['guid'])
-    elif r['expect']['expecting_input'] == 1 and r['expect']['expecting_dayno'] == 1:
-        collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
-        return scraper.loop_days(int(message), r['guid'])
-    elif r['expect']['expecting_input'] == 1 and r['expect']['expecting_date'] == 1:
-        collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
-        return scraper.specific_day(message, r['guid'])
-    elif r['expect']['expecting_input'] == 1:
-        if message == "1":
-            return scraper.read_today(r['guid'])
-        elif message == "2":
-            collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 1, "expecting_dayno": 0, "expecting_date": 0}}})
-            return "What day?"
-        elif message == "3":
-            collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 1, "expecting_date": 0}}})
-            return "How many days?"
-        elif message == "4":
-            collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 0, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 1, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 1}}})
-            return "Enter date in DD/MM/YYYY format: "
-        elif message == "5":
-            collection.update_one({"id": id}, {'$set': {'expect': {"expecting_start": 1, "expecting_guid": 0, "expecting_pass": 0, "expecting_input": 0, "expecting_day": 0, "expecting_dayno": 0, "expecting_date": 0}}})
-            scraper.close(r['guid'])
-            return "Logged out! Goodbye. :)"
-        elif message.lower() == "delete data":
-            collection.delete_one({"id": id})
-            return "Deleted! :) "
-        else:
-            return "Not sure how to answer that."
-'''
 
 def handleExpect(message, id):
     r = collection.find_one({"_id": id})
