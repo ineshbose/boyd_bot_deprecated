@@ -48,7 +48,7 @@ def webhook():
                     result = collection.find_one({"_id": "W"+sender_id})
                     if result['expect']['expecting_guid'] == 1:
                         try:
-                            if type(int(messaging_event['message']['text'][:7])) == type(123) and type(messaging_event['message']['text'][7]) == type("a") and len(messaging_event['message']['text']) == 7:
+                            if type(int(messaging_event['message']['text'][:7])) == type(123) and type(messaging_event['message']['text'][7]) == type("a") and len(messaging_event['message']['text']) == 8:
                                 collection.update_one({"_id": "W"+sender_id}, {'$set': {"guid": messaging_event['message']['text'], "expect":{"expecting_guid": 0, "expecting_pass": 1}}})
                                 bot.send_text_message(sender_id, "Enter password (No one will see it and you can delete it afterwards :) ).")
                                 return "ok", 200
