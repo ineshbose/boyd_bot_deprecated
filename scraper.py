@@ -15,11 +15,12 @@ options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
+options.add_argument('--log-level=3')
 browsers = {}
 
 def login(guidd,passww):
-    browsers[guidd] = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
-    #browsers[guidd] = webdriver.Chrome(executable_path=chromedriver, chrome_options=options)
+    browsers[guidd] = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=options)
+    #browsers[guidd] = webdriver.Chrome(executable_path=chromedriver, options=options)
     browsers[guidd].get(URL)
     browsers[guidd].find_element_by_id("guid").send_keys(guidd)
     browsers[guidd].find_element_by_id("password").send_keys(passww)
@@ -37,7 +38,14 @@ def login(guidd,passww):
         browsers[guidd].quit()
         return 3
 
-def read_today(guidd):
+def format_table(guidd):
+    class_data = []
+    for i in range(1,8):
+        class_data.append(browsers[guidd].find_element_by_xpath("//*[@id='eventModal']/div/div/div[2]/table/tr[{}]/td".format(str(i))).text)
+    
+    return class_data[0] + " ({}) ".format(class_data[2]) + "\nfrom {} to {} ".format(class_data[4],class_data[5]) + "\nat {}.".format(class_data[1])
+
+def read_day(guidd):
     message = ""
     time.sleep(1)
     classes = browsers[guidd].find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
@@ -50,12 +58,37 @@ def read_today(guidd):
                 clas.click()
                 time.sleep(1)
                 table = browsers[guidd].find_element_by_class_name("dialogueTable")
-                message+=table.text+"\n\n"
+                #message+=table.text+"\n\n"
+                message+=format_table(guidd)+"\n\n"
                 browsers[guidd].find_element_by_class_name("close.text-white").click()
             except error.ElementNotInteractableException as e:
                 message+="(Unable to fetch class)\n"
                 continue
     return message
+
+'''
+def read_now(guidd):
+    message = ""
+    time.sleep(1)
+    classes = browsers[guidd].find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
+    if classes == []:
+        message+= "There seem to be no classes."
+    else:
+        message+= "You have..\n"
+        for clas in classes:
+            try:
+                clas.click()
+                time.sleep(1)
+                table = browsers[guidd].find_element_by_class_name("dialogueTable")
+                class_time = table.find_element_by_xpath("//*[@id='eventModal']/div/div/div[2]/table/tr[5]/td").text
+                if datetime.datetime.strptime(class_time, '%I:%M %p') > datetime.datetime.now():
+                    message+=format_table(table)+"\n"
+                browsers[guidd].find_element_by_class_name("close.text-white").click()
+            except error.ElementNotInteractableException as e:
+                message+="(Unable to fetch class)\n"
+                continue
+    return message
+'''
 
 def specific_day(date_entry, guidd):
     try:
@@ -63,19 +96,20 @@ def specific_day(date_entry, guidd):
         date1 = datetime.date(year, month, day)
         message = loop_days((date1 - datetime.date.today()).days, guidd)
         return message
-    except:
+    except ValueError as ve:
         return "The date seems invalid."
 
 def loop_days(n,guidd):
-    if n < 365:
+    if n < 365 and n>=0:
         for i in range(n):
             browsers[guidd].find_element_by_class_name("fc-next-button.fc-button.fc-button-primary").click()
-        message = read_today(guidd)
+        message = read_day(guidd)
         browsers[guidd].find_element_by_class_name("fc-today-button.fc-button.fc-button-primary").click()
         return message
     else:
         return "That seems way too far out."
 
+'''
 def read_week(day,guidd):
     time.sleep(1)
     browsers[guidd].find_element_by_class_name("fc-listWeek-button.fc-button.fc-button-primary").click()
@@ -90,6 +124,7 @@ def read_week(day,guidd):
     days.append(data.split("Friday")[1])
     browsers[guidd].find_element_by_class_name("fc-timeGridDay-button.fc-button.fc-button-primary").click()
     return (days[weekdayMapping[day.upper()]])
+'''
 
 def close(guidd):
     browsers[guidd].find_element_by_class_name("btn.btn-primary.btn-block.nav-button.router-link-active").click()
