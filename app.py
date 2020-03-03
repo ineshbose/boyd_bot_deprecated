@@ -115,7 +115,7 @@ def handleMessage(message, id):
                 #print(parse['entities']['datetime'][0]['value'][:10])
                 bot.send_action(id, "typing_on")
                 return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
-            except:
+            except KeyError:
                 return "Not sure how to answer that."
 
 def log(message):
