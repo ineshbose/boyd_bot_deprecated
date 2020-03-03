@@ -7,12 +7,12 @@ from cryptography.fernet import Fernet
 from wit import Wit
 
 app = Flask(__name__)
-#witClient = Wit("7RDXFP6UYEUHHZVJCB6HYMRFFQ6M55EK")
-#cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
+witClient = Wit("7RDXFP6UYEUHHZVJCB6HYMRFFQ6M55EK")
+cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
 #PAGE_ACCESS_TOKEN = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624McoEHRFBnzXugVlkcCx0PhOLUpAkdn4gZBKYGrRpRrT4OM0yEU5dYI0aVM1RosAThjqFIejvhx4m1L8REV29aMrmspjUeVDwTLVyLBabJKcZCaZC3kooRZCx8ZAbz1BiSZBrCgIOZC7ZBLBcfUZD"
-witClient = Wit(os.environ.get("WIT_ACCESS_TOKEN"))
+#witClient = Wit(os.environ.get("WIT_ACCESS_TOKEN"))
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
-cluster = MongoClient(os.environ.get("MONGO_TOKEN"))
+#cluster = MongoClient(os.environ.get("MONGO_TOKEN"))
 db = cluster['gutb']
 collection = db['users']
 
@@ -84,22 +84,29 @@ def webhook():
                         messaging_text = messaging_event['message']['text']
                     else:
                         messaging_text = 'no text'
-                    response = handleExpect(messaging_text, sender_id)
+                    response = handleMessage(messaging_text, sender_id)
                     bot.send_text_message(sender_id, response)
     return "ok", 200
 
-def handleExpect(message, id):
+def handleMessage(message, id):
     r = collection.find_one({"_id": id})
     if r['loggedIn'] == 0:
         bot.send_text_message(id, "Logging in..")
         bot.send_action(id, "typing_on")
-        collection.update_one({"_id": id}, {'$set': {'loggedIn': 1}})
-        scraper.login(r['guid'], (f.decrypt(r['thing'])).decode())
-        return "Logged in!"
+        loginResult = scraper.login(r['guid'], (f.decrypt(r['thing'])).decode())
+        if loginResult == 1:
+            collection.update_one({"_id": id}, {'$set': {'loggedIn': 1}}) 
+            return "Logged in!"
+        elif loginResult == 2:
+            collection.delete_one({"_id": id})
+            collection.insert({"_id": "W"+id, "guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}})
+            return "It looks like your credentials were changed! Enter GUID."
+        elif loginResult == 3:
+            return "Something went wrong. Try messaging me again to login."
     else:
         if message.lower() == "logout":
-            collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
             scraper.close(r['guid'])
+            collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
             return "Logged out! Goodbye. :)"
         elif message.lower() == "delete data":
             collection.delete_one({"_id": id})
