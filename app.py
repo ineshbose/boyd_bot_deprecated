@@ -5,14 +5,13 @@ import scraper
 from pymessenger import Bot
 from cryptography.fernet import Fernet
 from wit import Wit
+#from pprint import pprint
 
 app = Flask(__name__)
 witClient = Wit("7RDXFP6UYEUHHZVJCB6HYMRFFQ6M55EK")
 cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
 #PAGE_ACCESS_TOKEN = "EAAHFHWcVN3oBAHQwZBZBVZCrB3jCrZCZCgSsY6ZAoFTdAcbWsRt7624McoEHRFBnzXugVlkcCx0PhOLUpAkdn4gZBKYGrRpRrT4OM0yEU5dYI0aVM1RosAThjqFIejvhx4m1L8REV29aMrmspjUeVDwTLVyLBabJKcZCaZC3kooRZCx8ZAbz1BiSZBrCgIOZC7ZBLBcfUZD"
-#witClient = Wit(os.environ.get("WIT_ACCESS_TOKEN"))
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
-#cluster = MongoClient(os.environ.get("MONGO_TOKEN"))
 db = cluster['gutb']
 collection = db['users']
 
@@ -100,7 +99,7 @@ def handleMessage(message, id):
         else:
             collection.delete_one({"_id": id})
             collection.insert({"_id": "W"+id, "guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}})
-            return "Something went wrong! Enter GUID."
+            return "Something went wrong. Enter GUID."
     else:
         if message.lower() == "logout":
             scraper.close(r['guid'])
@@ -112,7 +111,8 @@ def handleMessage(message, id):
         else:
             try:
                 parse = witClient.message(message)
-                print(parse['entities']['datetime'][0]['value'][:10])
+                #pprint(parse)
+                #print(parse['entities']['datetime'][0]['value'][:10])
                 bot.send_action(id, "typing_on")
                 return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
             except:
