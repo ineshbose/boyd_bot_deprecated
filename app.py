@@ -97,12 +97,10 @@ def handleMessage(message, id):
         if loginResult == 1:
             collection.update_one({"_id": id}, {'$set': {'loggedIn': 1}}) 
             return "Logged in!"
-        elif loginResult == 2:
+        else:
             collection.delete_one({"_id": id})
             collection.insert({"_id": "W"+id, "guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}})
-            return "It looks like your credentials were changed! Enter GUID."
-        elif loginResult == 3:
-            return "Something went wrong. Try messaging me again to login."
+            return "Something went wrong! Enter GUID."
     else:
         if message.lower() == "logout":
             scraper.close(r['guid'])
