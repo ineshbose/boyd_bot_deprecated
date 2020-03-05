@@ -47,9 +47,6 @@ def check_browser(guidd):
     try:
         if browsers[guidd].current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             return True
-        else:
-            browsers.pop(guidd) # Yet to test
-            return False
     except:
         return False
 
@@ -62,9 +59,9 @@ def format_table(guidd):
 
 def read_day(guidd):
     message = ""
-    #time.sleep(1)
-    element_present = EC.presence_of_element_located((By.CLASS_NAME, "fc-time-grid-event.fc-event.fc-start.fc-end"))
-    WebDriverWait(browsers[guidd], 1).until(element_present)
+    time.sleep(1)
+    #element_present = EC.presence_of_element_located((By.CLASS_NAME, "fc-time-grid-event.fc-event.fc-start.fc-end"))
+    #WebDriverWait(browsers[guidd], 1).until(element_present)
     classes = browsers[guidd].find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
     if classes == []:
         message+= "There seem to be no classes."
@@ -73,12 +70,20 @@ def read_day(guidd):
         for clas in classes:
             try:
                 clas.click()
-                #time.sleep(1)
-                element_present = EC.presence_of_element_located((By.CLASS_NAME, "dialogueTable"))
-                WebDriverWait(browsers[guidd], 1).until(element_present)
+                time.sleep(1)
+                #element_present = EC.presence_of_element_located((By.CLASS_NAME, "dialogueTable"))
+                #WebDriverWait(browsers[guidd], 2).until(element_present)
                 table = browsers[guidd].find_element_by_class_name("dialogueTable")
                 message+=format_table(guidd)+"\n\n"
                 browsers[guidd].find_element_by_class_name("close.text-white").click()
+                #WebDriverWait(browsers[guidd], 1)
+                '''
+                try:
+                    browsers[guidd].find_element_by_class_name("close.text-white").click()
+                except error.ElementClickInterceptedException:
+                    WebDriverWait(browsers[guidd], 2)
+                    browsers[guidd].find_element_by_xpath("//*[@id='eventModal']/div/div/div[1]/button").click()
+                '''
             except error.ElementNotInteractableException as e:
                 message+="(Unable to fetch class)\n"
                 continue
