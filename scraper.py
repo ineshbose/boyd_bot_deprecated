@@ -47,7 +47,7 @@ def check_browser(guidd):
     try:
         if browsers[guidd].current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             return True
-        #return True
+        return True
     except:
         return False
 
