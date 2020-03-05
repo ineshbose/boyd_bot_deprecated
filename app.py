@@ -1,10 +1,13 @@
-from flask import Flask, request, session, redirect
+from flask import Flask, request, session, redirect, render_template
 from pymongo import MongoClient
 import os, sys
 import scraper
 from pymessenger import Bot
 from cryptography.fernet import Fernet
 from wit import Wit
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, HiddenField
+from wtforms.validators import DataRequired
 #from pprint import pprint
 
 app = Flask(__name__)
@@ -21,6 +24,14 @@ file.close()
 f = Fernet(key)
 
 bot = Bot(PAGE_ACCESS_TOKEN)
+
+'''
+class SignupForm(FlaskForm):
+    regno = StringField('Registration Number', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    uid = HiddenField('uid')
+    submit = SubmitField('Register')
+'''
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -83,11 +94,39 @@ def webhook():
                         messaging_text = messaging_event['message']['text']
                     else:
                         messaging_text = 'no text'
-                    response = handleMessage(messaging_text, sender_id)
+                    response = parse_message(messaging_text, sender_id)
                     bot.send_text_message(sender_id, response)
     return "ok", 200
 
-def handleMessage(message, id):
+'''
+@app.route('/register', methods=['GET', 'POST'])
+def new_user_registration(sender_id):
+    if request.method == 'GET':
+        #key = request.args.get('key')
+        #app.logger.info('uid:{} requested registration'.format(key))
+        #if r.exists('IN_REG:'+key):
+        if collection.find({"_id": sender_id}):
+            #app.logger.info('uid:{} is undergoing registration'.format(key))
+            form = SignupForm(uid=key)
+            return render_template('register.html', form=form)
+   	    else:
+            #app.logger.info('uid:{} expired/invalid registration key'.format(key))
+            return '404'
+    else:
+        regno = request.form.get('regno')
+        password = request.form.get('password')
+        uid = request.form.get('uid')
+        if scraper.login(regno, password) is None:
+            app.logger.info('uid:{} provided wrong credentials'.format(uid))
+            return '<h1> Wrong credentials </h1>'
+
+        app.logger.info('uid:{} has registered'.format(uid))
+        r.delete('IN_REG:'+uid)
+        r.set(uid, json.dumps({'regno' : regno, 'password' : password}))
+        return '<h1> Registration complete </h1>'
+'''
+
+def parse_message(message, id):
     r = collection.find_one({"_id": id})
     if r['loggedIn'] == 0:
         bot.send_text_message(id, "Logging in..")
@@ -95,28 +134,39 @@ def handleMessage(message, id):
         loginResult = scraper.login(r['guid'], (f.decrypt(r['thing'])).decode())
         if loginResult == 1:
             collection.update_one({"_id": id}, {'$set': {'loggedIn': 1}}) 
-            return "Logged in!"
+            bot.send_text_message(id, "Logged in!")
+            try:
+                parse = witClient.message(message)
+                bot.send_action(id, "typing_on")
+                return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
+            except:
+                return "What's up?"
         else:
             collection.delete_one({"_id": id})
             collection.insert({"_id": "W"+id, "guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}})
             return "Something went wrong. Enter GUID."
     else:
-        if message.lower() == "logout":
-            scraper.close(r['guid'])
-            collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
-            return "Logged out! Goodbye. :)"
-        elif message.lower() == "delete data":
-            collection.delete_one({"_id": id})
-            return "Deleted! :) "
+        if scraper.check_browser(r['guid']):
+            if message.lower() == "logout":
+                scraper.close(r['guid'])
+                collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
+                return "Logged out! Goodbye. :)"
+            elif message.lower() == "delete data":
+                collection.delete_one({"_id": id})
+                return "Deleted! :) "
+            else:
+                try:
+                    parse = witClient.message(message)
+                    #pprint(parse)
+                    #print(parse['entities']['datetime'][0]['value'][:10])
+                    bot.send_action(id, "typing_on")
+                    return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
+                except Exception as exception:
+                    #return exception.__str__() # To print error
+                    return "Not sure how to answer that. \n ERROR: " + exception.__str__() + "\n\n" + parse.__str__()
         else:
-            try:
-                parse = witClient.message(message)
-                #pprint(parse)
-                #print(parse['entities']['datetime'][0]['value'][:10])
-                bot.send_action(id, "typing_on")
-                return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
-            except KeyError:
-                return "Not sure how to answer that."
+            collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
+            return "You have been logged out for being idle for too long."
 
 def log(message):
     print(message)

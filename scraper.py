@@ -1,11 +1,14 @@
 from selenium import webdriver
 import os
 import selenium.common.exceptions as error
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 import time, datetime
 
 ## Constants
 URL = "https://www.gla.ac.uk/apps/timetable/#/login"
-chromedriver = 'C:/Users/Inesh/Downloads/chromedriver'
+chromedriver = 'C:/Programs/Drivers/chromedriver'
 weekdayMapping = {"MONDAY":0, "TUESDAY":1, "WEDNESDAY":2, "THURSDAY":3, "FRIDAY":4}
 ###
 
@@ -25,10 +28,12 @@ def login(guidd,passww):
     browsers[guidd].find_element_by_id("guid").send_keys(guidd)
     browsers[guidd].find_element_by_id("password").send_keys(passww)
     browsers[guidd].find_element_by_xpath("//*[@id='app']/div/main/button").click()
-    time.sleep(4)
+    #time.sleep(4)
     try:
+        element_present = EC.presence_of_element_located((By.XPATH, "//*[@id='app']/div/div[1]/div[1]/a"))
+        WebDriverWait(browsers[guidd], 4).until(element_present)
         browsers[guidd].find_element_by_xpath("//*[@id='app']/div/div[1]/div[1]/a").click()
-        time.sleep(1)
+        #time.sleep(1)
         if browsers[guidd].current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             return 1
     except error.UnexpectedAlertPresentException as e:
@@ -37,6 +42,16 @@ def login(guidd,passww):
     except error.NoSuchElementException as load:
         browsers[guidd].quit()
         return 3
+
+def check_browser(guidd):
+    try:
+        if browsers[guidd].current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
+            return True
+        else:
+            browsers.pop(guidd) # Yet to test
+            return False
+    except:
+        return False
 
 def format_table(guidd):
     class_data = []
@@ -47,7 +62,9 @@ def format_table(guidd):
 
 def read_day(guidd):
     message = ""
-    time.sleep(1)
+    #time.sleep(1)
+    element_present = EC.presence_of_element_located((By.CLASS_NAME, "fc-time-grid-event.fc-event.fc-start.fc-end"))
+    WebDriverWait(browsers[guidd], 1).until(element_present)
     classes = browsers[guidd].find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
     if classes == []:
         message+= "There seem to be no classes."
@@ -56,7 +73,9 @@ def read_day(guidd):
         for clas in classes:
             try:
                 clas.click()
-                time.sleep(1)
+                #time.sleep(1)
+                element_present = EC.presence_of_element_located((By.CLASS_NAME, "dialogueTable"))
+                WebDriverWait(browsers[guidd], 1).until(element_present)
                 table = browsers[guidd].find_element_by_class_name("dialogueTable")
                 message+=format_table(guidd)+"\n\n"
                 browsers[guidd].find_element_by_class_name("close.text-white").click()
@@ -89,3 +108,4 @@ def close(guidd):
     browsers[guidd].find_element_by_class_name("btn.btn-primary.btn-block.nav-button.router-link-active").click()
     browsers[guidd].find_element_by_class_name("btn.btn-primary.btn-rounded").click()
     browsers[guidd].quit()
+    # browsers.pop(guidd)
