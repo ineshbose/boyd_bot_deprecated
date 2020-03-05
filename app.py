@@ -5,9 +5,9 @@ import scraper
 from pymessenger import Bot
 from cryptography.fernet import Fernet
 from wit import Wit
-#from flask_wtf import FlaskForm
-#from wtforms import StringField, PasswordField, SubmitField, HiddenField
-#from wtforms.validators import DataRequired
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, HiddenField
+from wtforms.validators import DataRequired
 #from pprint import pprint
 
 app = Flask(__name__)
@@ -17,6 +17,8 @@ cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mon
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
 db = cluster['gutb']
 collection = db['users']
+#app.config['SECRET_KEY'] = 'CHLORINE'
+app.config['SECRET_KEY'] = os.environ.get("FLASK_KEY")
 
 file = open('key.key', 'rb')
 key = file.read()
@@ -25,70 +27,34 @@ f = Fernet(key)
 
 bot = Bot(PAGE_ACCESS_TOKEN)
 
-'''
-class SignupForm(FlaskForm):
-    regno = StringField('Registration Number', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    uid = HiddenField('uid')
-    submit = SubmitField('Register')
-'''
 
-@app.route('/', methods=['GET'])
-def verify():
-    if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-        #if not request.args.get("hub.verify_token") == "gutbot":
-        if not request.args.get("hub.verify_token") == os.environ.get("VERIFY_TOKEN"):
-            return "Verification token mismatch", 403
-        return request.args["hub.challenge"], 200
-    return "Hello World", 200
+class RegisterForm(FlaskForm):
+    fb_id = HiddenField('fb_id')
+    gla_id = StringField('GUID', validators=[DataRequired()])
+    gla_pass = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
-@app.route('/', methods=['POST'])
-def webhook():
-    data = request.get_json()
-    #log(data)
-    if data['object'] == 'page':
-        for entry in data['entry']:
-            for messaging_event in entry['messaging']:
-                sender_id = messaging_event['sender']['id']
-                if collection.find({"_id": sender_id}).count()==0 and collection.find({"_id": "W"+sender_id}).count()==0:
-                    bot.send_text_message(sender_id, "New user! Enter your GUID.")
-                    collection.insert({"_id": "W"+sender_id, "guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}})
-                    return "ok", 200
-                if collection.find({"_id": "W"+sender_id}).count()>0:
-                    result = collection.find_one({"_id": "W"+sender_id})
-                    if result['expect']['expecting_guid'] == 1:
-                        try:
-                            if type(int(messaging_event['message']['text'][:7])) == type(123) and type(messaging_event['message']['text'][7]) == type("a") and len(messaging_event['message']['text']) == 8:
-                                collection.update_one({"_id": "W"+sender_id}, {'$set': {"guid": messaging_event['message']['text'], "expect":{"expecting_guid": 0, "expecting_pass": 1}}})
-                                bot.send_text_message(sender_id, "Enter password (No one will see it and you can delete it afterwards :) ).")
-                                return "ok", 200
-                            else:
-                                bot.send_text_message(sender_id, "Invalid GUID. It is seven integers with your surname's initial. Enter it again.")
-                                return "ok", 200
-                        except:
-                            bot.send_text_message(sender_id, "Invalid GUID. It is seven integers with your surname's initial. Enter it again.")
-                            return "ok", 200
-                    elif result['expect']['expecting_pass'] == 1:
-                        bot.send_text_message(sender_id, "Attempting to log you in..")
-                        bot.send_action(sender_id, "typing_on")
-                        loginResult = scraper.login(result['guid'], messaging_event['message']['text'])
-                        if loginResult == 1:
-                            bot.send_text_message(sender_id, "Logged in!")
-                            collection.insert({"_id": sender_id, "guid": result['guid'], "thing": f.encrypt(messaging_event['message']['text'].encode()), "loggedIn": 1})
-                            collection.delete_one({"_id": "W"+sender_id})
-                            return "ok", 200
-                        elif loginResult == 2:
-                            bot.send_text_message(sender_id, "Invalid credentials. Enter GUID again.")
-                            collection.update_one(
-                            {"_id": "W"+sender_id}, 
-                            {'$set': {"guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}}})
-                            return "ok", 200
-                        elif loginResult == 3:
-                            bot.send_text_message(sender_id, "Something went wrong. Maybe the connection was too slow. Enter GUID again.")
-                            collection.update_one(
-                            {"_id": "W"+sender_id}, 
-                            {'$set': {"guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}}})
-                            return "ok", 200
+@app.route('/', methods=['GET','POST'])
+def main():
+    if request.method == 'GET':
+        if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
+            #if not request.args.get("hub.verify_token") == "gutbot":
+            if not request.args.get("hub.verify_token") == os.environ.get("VERIFY_TOKEN"):
+                return "Verification token mismatch", 403
+            return request.args["hub.challenge"], 200
+        return "Hello World", 200
+    else:
+        data = request.get_json()
+        #log(data)
+        if data['object'] == 'page':
+            sender_id = data['entry'][0]['messaging'][0]['sender']['id']
+            '''
+            for entry in data['entry']:
+                for messaging_event in entry['messaging']:
+                    sender_id = messaging_event['sender']['id']
+            '''
+            messaging_event = data['entry'][0]['messaging'][0]
+            if collection.find({"_id": sender_id}).count()!=0: #and collection.find({"_id": "W"+sender_id}).count()==0:
                 if messaging_event.get('message'):
                     if 'text' in messaging_event['message']:
                         messaging_text = messaging_event['message']['text']
@@ -96,35 +62,34 @@ def webhook():
                         messaging_text = 'no text'
                     response = parse_message(messaging_text, sender_id)
                     bot.send_text_message(sender_id, response)
-    return "ok", 200
+            else:
+                collection.insert({"_id": "W"+sender_id})
+                bot.send_text_message(sender_id, "New user!\nRegister here: https://boydbot.herokuapp.com/register?key={}".format(sender_id))
+                return "ok", 200
+        return "ok", 200
 
-'''
+
 @app.route('/register', methods=['GET', 'POST'])
-def new_user_registration(sender_id):
+def new_user_registration():
     if request.method == 'GET':
-        #key = request.args.get('key')
-        #app.logger.info('uid:{} requested registration'.format(key))
-        #if r.exists('IN_REG:'+key):
-        if collection.find({"_id": sender_id}):
-            #app.logger.info('uid:{} is undergoing registration'.format(key))
-            form = SignupForm(uid=key)
+        pk = request.args.get('key')
+        if collection.find({"_id": "W"+str(pk)}).count()>0:
+            form = RegisterForm(fb_id=pk)
             return render_template('register.html', form=form)
-   	    else:
-            #app.logger.info('uid:{} expired/invalid registration key'.format(key))
+        else:
             return '404'
     else:
-        regno = request.form.get('regno')
-        password = request.form.get('password')
-        uid = request.form.get('uid')
-        if scraper.login(regno, password) is None:
-            app.logger.info('uid:{} provided wrong credentials'.format(uid))
+        fb_id = request.form.get('fb_id')
+        gla_id = request.form.get('gla_id')
+        gla_pass = request.form.get('gla_pass')
+        loginResult = scraper.login(gla_id, gla_pass)
+        if loginResult == 2:
             return '<h1> Wrong credentials </h1>'
-
-        app.logger.info('uid:{} has registered'.format(uid))
-        r.delete('IN_REG:'+uid)
-        r.set(uid, json.dumps({'regno' : regno, 'password' : password}))
-        return '<h1> Registration complete </h1>'
-'''
+        elif loginResult == 3:
+            return '<h1> Something went wrong. Try again. </h1>'
+        collection.insert({"_id": fb_id, "guid": gla_id, "thing": f.encrypt(gla_pass.encode()), "loggedIn": 1})
+        collection.delete_one({"_id": "W"+fb_id})
+        return '<h1> Login successful! You can now close this page and chat to the bot. </h1>'
 
 def parse_message(message, id):
     r = collection.find_one({"_id": id})
@@ -143,8 +108,8 @@ def parse_message(message, id):
                 return "What's up?" #+ exception.__str__() + "\n\n" + parse.__str__()
         else:
             collection.delete_one({"_id": id})
-            collection.insert({"_id": "W"+id, "guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}})
-            return "Something went wrong. Enter GUID."
+            collection.insert({"_id": "W"+id})
+            return "Something went wrong.\nRegister here: https://boydbot.herokuapp.com/register?key={}".format(id)
     else:
         if scraper.check_browser(r['guid']):
             if message.lower() == "logout":
@@ -152,6 +117,7 @@ def parse_message(message, id):
                 collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
                 return "Logged out! Goodbye. :)"
             elif message.lower() == "delete data":
+                scraper.close(r['guid'])
                 collection.delete_one({"_id": id})
                 return "Deleted! :) "
             else:

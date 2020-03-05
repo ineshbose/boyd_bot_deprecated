@@ -82,7 +82,7 @@ def read_day(guidd):
                 table = browsers[guidd].find_element_by_class_name("dialogueTable")
                 message+=format_table(guidd)+"\n\n"
                 browsers[guidd].find_element_by_class_name("close.text-white").click()
-            except error.ElementNotInteractableException as e:
+            except error.ElementNotInteractableException:
                 message+="(Unable to fetch class)\n"
                 continue
     except error.TimeoutException:
@@ -96,7 +96,7 @@ def specific_day(date_entry, guidd):
         date1 = datetime.date(year, month, day)
         message = loop_days((date1 - datetime.date.today()).days, guidd)
         return message
-    except ValueError as ve:
+    except ValueError:
         return "The date seems invalid."
 
 def loop_days(n,guidd):
@@ -113,4 +113,3 @@ def close(guidd):
     browsers[guidd].find_element_by_class_name("btn.btn-primary.btn-block.nav-button.router-link-active").click()
     browsers[guidd].find_element_by_class_name("btn.btn-primary.btn-rounded").click()
     browsers[guidd].quit()
-    # browsers.pop(guidd)
