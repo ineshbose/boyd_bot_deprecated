@@ -5,9 +5,9 @@ import scraper
 from pymessenger import Bot
 from cryptography.fernet import Fernet
 from wit import Wit
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, HiddenField
-from wtforms.validators import DataRequired
+#from flask_wtf import FlaskForm
+#from wtforms import StringField, PasswordField, SubmitField, HiddenField
+#from wtforms.validators import DataRequired
 #from pprint import pprint
 
 app = Flask(__name__)
@@ -138,7 +138,7 @@ def parse_message(message, id):
             try:
                 parse = witClient.message(message)
                 bot.send_action(id, "typing_on")
-                return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
+                return scraper.specific_day(parse['entities']['datetime'][0]['values'][0]['value'][:10], r['guid'])
             except:
                 return "What's up?"
         else:
@@ -160,10 +160,10 @@ def parse_message(message, id):
                     #pprint(parse)
                     #print(parse['entities']['datetime'][0]['value'][:10])
                     bot.send_action(id, "typing_on")
-                    return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
-                except Exception as exception:
+                    return scraper.specific_day(parse['entities']['datetime'][0]['values'][0]['value'][:10], r['guid'])
+                except:
                     #return exception.__str__() # To print error
-                    return "Not sure how to answer that. \n ERROR: " + exception.__str__() + "\n\n" + parse.__str__()
+                    return "Not sure how to answer that." # \n ERROR: " + exception.__str__() + "\n\n" + parse.__str__()
         else:
             collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
             return "You have been logged out for being idle for too long."
