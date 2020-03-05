@@ -39,7 +39,7 @@ def login(guidd,passww):
     except error.UnexpectedAlertPresentException as e:
         browsers[guidd].quit()
         return 2
-    except error.NoSuchElementException as load:
+    except:
         browsers[guidd].quit()
         return 3
 
@@ -47,6 +47,7 @@ def check_browser(guidd):
     try:
         if browsers[guidd].current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             return True
+        #return True
     except:
         return False
 
@@ -59,9 +60,10 @@ def format_table(guidd):
 
 def read_day(guidd):
     message = ""
-    time.sleep(1)
-    #element_present = EC.presence_of_element_located((By.CLASS_NAME, "fc-time-grid-event.fc-event.fc-start.fc-end"))
-    #WebDriverWait(browsers[guidd], 1).until(element_present)
+    #time.sleep(1)
+    element_present = EC.visibility_of_all_elements_located((By.CLASS_NAME, "fc-time-grid-event.fc-event.fc-start.fc-end"))
+    #element_present = EC.presence_of_all_elements_located((By.CLASS_NAME, "fc-time-grid-event.fc-event.fc-start.fc-end"))
+    WebDriverWait(browsers[guidd], 1).until(element_present)
     classes = browsers[guidd].find_elements_by_class_name("fc-time-grid-event.fc-event.fc-start.fc-end")
     if classes == []:
         message+= "There seem to be no classes."
@@ -70,9 +72,9 @@ def read_day(guidd):
         for clas in classes:
             try:
                 clas.click()
-                time.sleep(1)
-                #element_present = EC.presence_of_element_located((By.CLASS_NAME, "dialogueTable"))
-                #WebDriverWait(browsers[guidd], 2).until(element_present)
+                #time.sleep(1)
+                element_present = EC.visibility_of_element_located((By.CLASS_NAME, "dialogueTable"))
+                WebDriverWait(browsers[guidd], 1).until(element_present)
                 table = browsers[guidd].find_element_by_class_name("dialogueTable")
                 message+=format_table(guidd)+"\n\n"
                 browsers[guidd].find_element_by_class_name("close.text-white").click()

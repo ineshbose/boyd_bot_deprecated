@@ -139,8 +139,8 @@ def parse_message(message, id):
                 parse = witClient.message(message)
                 bot.send_action(id, "typing_on")
                 return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid']) #['values'][0]
-            except Exception as exception:
-                return "What's up?" + exception.__str__() + "\n\n" + parse.__str__()
+            except:# Exception as exception:
+                return "What's up?" #+ exception.__str__() + "\n\n" + parse.__str__()
         else:
             collection.delete_one({"_id": id})
             collection.insert({"_id": "W"+id, "guid": "", "thing": "", "expect":{"expecting_guid": 1, "expecting_pass": 0}})
@@ -161,12 +161,11 @@ def parse_message(message, id):
                     #print(parse['entities']['datetime'][0]['value'][:10])
                     bot.send_action(id, "typing_on")
                     return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
-                except Exception as exception:
-                    #return exception.__str__() # To print error
-                    return "Not sure how to answer that. \n ERROR: " + exception.__str__() + "\n\n" + parse.__str__()
+                except:# Exception as exception:
+                    return "Not sure how to answer that." # \n ERROR: " + exception.__str__() + "\n\n" + parse.__str__()
         else:
             collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
-            return "You have been logged out for being idle for too long."
+            return "You have been logged out due to some error or being idle for too long. Say hello to log in again. :) "
 
 def log(message):
     print(message)
