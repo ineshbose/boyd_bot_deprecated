@@ -36,7 +36,7 @@ def login(guidd,passww):
         #time.sleep(1)
         if browsers[guidd].current_url == "https://www.gla.ac.uk/apps/timetable/#/timetable":
             return 1
-    except error.UnexpectedAlertPresentException as e:
+    except error.UnexpectedAlertPresentException:
         browsers[guidd].quit()
         return 2
     except:
@@ -85,7 +85,7 @@ def read_day(guidd):
             except error.ElementNotInteractableException as e:
                 message+="(Unable to fetch class)\n"
                 continue
-    except TimeoutError:
+    except error.TimeoutException:
         message+="There seem to be no classes."
     return message
 
