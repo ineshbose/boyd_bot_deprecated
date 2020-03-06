@@ -50,6 +50,8 @@ def check_browser(guidd):
         return True
     except error.WebDriverException:
         return False
+    except KeyError:
+        return False
     return True
 
 def format_table(guidd):

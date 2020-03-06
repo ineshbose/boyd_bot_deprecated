@@ -17,7 +17,7 @@ cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mon
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
 db = cluster['gutb']
 collection = db['users']
-#app.config['SECRET_KEY'] = 'CHLORINE'
+#app.config['SECRET_KEY'] = 'BAHQwZBZBVZCrB3'
 app.config['SECRET_KEY'] = os.environ.get("FLASK_KEY")
 
 file = open('key.key', 'rb')
