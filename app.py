@@ -10,6 +10,7 @@ from wtforms import StringField, PasswordField, SubmitField, HiddenField
 from wtforms.validators import DataRequired
 #from pprint import pprint
 
+
 app = Flask(__name__)
 witClient = Wit("7RDXFP6UYEUHHZVJCB6HYMRFFQ6M55EK")
 cluster = MongoClient("mongodb+srv://Orbviox:DyDbXczCO7XErtMC@cluster0-x4pbn.mongodb.net/test?retryWrites=true&w=majority")
@@ -20,10 +21,12 @@ collection = db['users']
 #app.config['SECRET_KEY'] = 'BAHQwZBZBVZCrB3'
 app.config['SECRET_KEY'] = os.environ.get("FLASK_KEY")
 
+
 file = open('key.key', 'rb')
 key = file.read()
 file.close()
 f = Fernet(key)
+
 
 bot = Bot(PAGE_ACCESS_TOKEN)
 
@@ -33,6 +36,7 @@ class RegisterForm(FlaskForm):
     gla_id = StringField('GUID', validators=[DataRequired()])
     gla_pass = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
+
 
 @app.route('/', methods=['GET','POST'])
 def main():
@@ -48,13 +52,9 @@ def main():
         #log(data)
         if data['object'] == 'page':
             sender_id = data['entry'][0]['messaging'][0]['sender']['id']
-            '''
-            for entry in data['entry']:
-                for messaging_event in entry['messaging']:
-                    sender_id = messaging_event['sender']['id']
-            '''
             messaging_event = data['entry'][0]['messaging'][0]
-            if collection.find({"_id": sender_id}).count()!=0: #and collection.find({"_id": "W"+sender_id}).count()==0:
+
+            if collection.count_documents({"_id": sender_id}) > 0:
                 if messaging_event.get('message'):
                     if 'text' in messaging_event['message']:
                         messaging_text = messaging_event['message']['text']
@@ -63,7 +63,7 @@ def main():
                     response = parse_message(messaging_text, sender_id)
                     bot.send_text_message(sender_id, response)
             else:
-                collection.insert({"_id": "W"+sender_id})
+                collection.insert_one({"_id": "W"+sender_id})
                 bot.send_text_message(sender_id, "New user!\nRegister here: https://boydbot.herokuapp.com/register?key={}".format(sender_id))
                 return "ok", 200
         return "ok", 200
@@ -71,67 +71,98 @@ def main():
 
 @app.route('/register', methods=['GET', 'POST'])
 def new_user_registration():
+    
     if request.method == 'GET':
         pk = request.args.get('key')
-        if collection.find({"_id": "W"+str(pk)}).count()>0:
+        
+        if collection.count_documents({"_id": "W"+str(pk)}) > 0:
             form = RegisterForm(fb_id=pk)
             return render_template('register.html', form=form)
         else:
             return '404'
+    
     else:
         fb_id = request.form.get('fb_id')
         gla_id = request.form.get('gla_id')
         gla_pass = request.form.get('gla_pass')
         loginResult = scraper.login(gla_id, gla_pass)
+        
         if loginResult == 2:
-            return '<h1> Wrong credentials </h1>'
+            return '<h1> Wrong credentials. <a href="https://boydbot.herokuapp.com/register?key={}">Try again.</a></h1>'.format(fb_id)
         elif loginResult == 3:
-            return '<h1> Something went wrong. Try again. </h1>'
-        collection.insert({"_id": fb_id, "guid": gla_id, "thing": f.encrypt(gla_pass.encode()), "loggedIn": 1})
+            return '<h1> Something went wrong. <a href="https://boydbot.herokuapp.com/register?key={}">Try again.</a></h1>'.format(fb_id)
+        
+        collection.insert_one({"_id": fb_id, "guid": gla_id, "thing": f.encrypt(gla_pass.encode()), "loggedIn": 1})
         collection.delete_one({"_id": "W"+fb_id})
         return '<h1> Login successful! You can now close this page and chat to the bot. </h1>'
 
+
 def parse_message(message, id):
     r = collection.find_one({"_id": id})
+    
     if r['loggedIn'] == 0:
         bot.send_text_message(id, "Logging in..")
         bot.send_action(id, "typing_on")
         loginResult = scraper.login(r['guid'], (f.decrypt(r['thing'])).decode())
+    
         if loginResult == 1:
             collection.update_one({"_id": id}, {'$set': {'loggedIn': 1}}) 
             bot.send_text_message(id, "Logged in!")
+    
             try:
                 parse = witClient.message(message)
                 bot.send_action(id, "typing_on")
-                return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid']) #['values'][0]
-            except:# Exception as exception:
-                return "What's up?" #+ exception.__str__() + "\n\n" + parse.__str__()
+                
+                if 'datetime' in parse['entities']:
+                    return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
+                
+                elif 'read_next' in parse['entities']:
+                    return scraper.read_now(r['guid'])
+                
+                else:
+                    return "What's up?"
+            
+            except:
+                return "What's up?"
+    
         else:
             collection.delete_one({"_id": id})
-            collection.insert({"_id": "W"+id})
+            collection.insert_one({"_id": "W"+id})
             return "Something went wrong.\nRegister here: https://boydbot.herokuapp.com/register?key={}".format(id)
+    
     else:
         if scraper.check_browser(r['guid']):
-            if message.lower() == "logout":
-                scraper.close(r['guid'])
-                collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
-                return "Logged out! Goodbye. :)"
-            elif message.lower() == "delete data":
-                scraper.close(r['guid'])
-                collection.delete_one({"_id": id})
-                return "Deleted! :) "
-            else:
-                try:
-                    parse = witClient.message(message)
-                    #pprint(parse)
-                    #print(parse['entities']['datetime'][0]['value'][:10])
-                    bot.send_action(id, "typing_on")
+    
+            try:
+                parse = witClient.message(message)
+                bot.send_action(id, "typing_on")
+
+                if 'logout' in parse['entities']:
+                    scraper.close(r['guid'])
+                    collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
+                    return "Logged out! Goodbye. :)"
+                
+                elif 'delete_data' in parse['entities']:
+                    scraper.close(r['guid'])
+                    collection.delete_one({"_id": id})
+                    return "Deleted! :) "
+                
+                elif 'datetime' in parse['entities']:
                     return scraper.specific_day(parse['entities']['datetime'][0]['value'][:10], r['guid'])
-                except:# Exception as exception:
-                    return "Not sure how to answer that." # \n ERROR: " + exception.__str__() + "\n\n" + parse.__str__()
+                
+                elif 'read_next' in parse['entities']:
+                    return scraper.read_now(r['guid'])
+                
+                else:
+                    return "Not sure how to answer that."
+            
+            except:
+                return "Not sure how to answer that."
+    
         else:
             collection.update_one({"_id": id}, {'$set': {'loggedIn': 0}})
             return "You have been logged out due to some error or being idle for too long. Say hello to log in again. :) "
+
 
 def log(message):
     print(message)
