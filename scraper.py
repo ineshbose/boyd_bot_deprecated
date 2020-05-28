@@ -9,7 +9,7 @@ import time, datetime, pytz
 
 ## Constants
 URL = "https://www.gla.ac.uk/apps/timetable/#/login"
-chromedriver = 'C:/Programs/Drivers/chromedriver'
+chromedriver = 'path/to/chromedriver'
 ###
 
 
@@ -25,7 +25,6 @@ browsers = {}
 
 def login(guidd,passww):
     browsers[guidd] = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=options)
-    #browsers[guidd] = webdriver.Chrome(executable_path=chromedriver, options=options)
     browsers[guidd].get(URL)
     browsers[guidd].find_element_by_id("guid").send_keys(guidd)
     browsers[guidd].find_element_by_id("password").send_keys(passww)
